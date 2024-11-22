@@ -115,7 +115,7 @@ void portfolio_manager(
     std::cout << "Funds allocated to stocks:\n";
     for (const auto& stock : buying_stocks) {
         std::cout << "- " << stock << ": $" << (allocation_weights[stock] / total_weight) * reallocation_funds
-                  << " (Updated total: $" << my_portfolio[stock] << ")\n";
+                  << " (New total: $" << my_portfolio[stock] << ")\n";
     }
 }
 
