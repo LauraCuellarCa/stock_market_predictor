@@ -243,12 +243,15 @@ int main() {
     // THIS INPUT FOR THE STRATEGY WILL BE TAKEN FROM THE USER
     std::string strategy = "optimistic";
 
+    //Print the strategy we are using
+    std::cout << "\nStrategy: " << strategy << "\n";
+
     // Calculate percentage changes
     std::map<std::string, std::vector<double>> ticker_to_percentage_changes =
         calculate_percentage_changes(ticker_to_prices);
 
     // Print the initial portfolio
-    std::cout << "Initial Portfolio:\n";
+    std::cout << "\nInitial Portfolio:\n";
     for (const auto& [stock, value] : my_portfolio) {
         std::cout << stock << ": $" << value << "\n";
     }
