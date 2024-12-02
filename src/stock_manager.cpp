@@ -70,30 +70,48 @@ StockManagerResult stockManager(
             // Get the volatility for the current hour, defaulting to the last value if out of bounds
             double avg_volatility = hour < volatility_values.size() ? volatility_values[hour] : volatility_values.back();
 
-            // Adjustments based on the strategy and average volatility
-            if (strategy == "optimistic") {                                    //MAYE WE WILL HAVE TO UPDATE THE PERCENTAGES BASED ON THE OUPUTES WE OBSERVE FROM THE VOLATILITY CODE
-                if (avg_volatility <= 0.003) {
-                    buying_stocks_hour.push_back(stock); // Strong buy
-                } else {
-                    buying_stocks_hour.push_back(stock); // Small buy
+                // Adjustments based on the strategy and average volatility
+                if (strategy == "optimistic") {
+                    // "Optimistic" strategy focuses on more buying opportunities, even at higher volatility.
+                    if (avg_volatility <= 0.0025) {
+                        buying_stocks_hour.push_back(stock); // Strong buy
+                    } else if (avg_volatility <= 0.004) {
+                        buying_stocks_hour.push_back(stock); // Moderate buy
+                    } else {
+                        // Very high volatility; sell a portion of the stock to free up funds
+                        adjustment = -invested_money * 0.05; // Light sell
+                        reallocation_funds_hour -= adjustment; // Add funds
+                        selling_stocks_hour.push_back(stock);
+                    }
+                } else if (strategy == "neutral") {
+                    // "Neutral" strategy balances between buying and selling.
+                    if (avg_volatility > 0.004) {
+                        adjustment = -invested_money * 0.03; // Light sell for higher volatility
+                        reallocation_funds_hour -= adjustment; // Free up funds
+                        selling_stocks_hour.push_back(stock);
+                    } else if (avg_volatility > 0.003) {
+                        // Moderate volatility; no action or slight buy
+                        buying_stocks_hour.push_back(stock);
+                    } else {
+                        // Low volatility; slight buy
+                        buying_stocks_hour.push_back(stock);
+                    }
+                } else if (strategy == "conservative") {
+                    // "Conservative" strategy is cautious about high volatility.
+                    if (avg_volatility > 0.004) {
+                        adjustment = -invested_money * 0.1; // Strong sell for very high volatility
+                        reallocation_funds_hour -= adjustment; // Free up significant funds
+                        selling_stocks_hour.push_back(stock);
+                    } else if (avg_volatility > 0.0035) {
+                        adjustment = -invested_money * 0.05; // Moderate sell
+                        reallocation_funds_hour -= adjustment;
+                        selling_stocks_hour.push_back(stock);
+                    } else {
+                        // Low volatility; slight buy
+                        buying_stocks_hour.push_back(stock);
+                    }
                 }
-            } else if (strategy == "neutral") {
-                if (avg_volatility > 0.005) {
-                    adjustment = -invested_money * 0.05; // Moderate sell
-                    reallocation_funds_hour -= adjustment; // Add positive funds
-                    selling_stocks_hour.push_back(stock);
-                } else {
-                    buying_stocks_hour.push_back(stock); // Slight buy
-                }
-            } else if (strategy == "conservative") {
-                if (avg_volatility > 0.005) {
-                    adjustment = -invested_money * 0.1; // Strong sell
-                    reallocation_funds_hour -= adjustment; // Add positive funds
-                    selling_stocks_hour.push_back(stock);
-                } else {
-                    buying_stocks_hour.push_back(stock); // Slight buy
-                }
-            }
+
 
             // Update the portfolio based on adjustment
             invested_money += adjustment;
@@ -214,12 +232,20 @@ PortfolioManagerResult portfolio_manager(
 int main() {
 
     //THIS WILL BE THE OUTPUT FROM SEBAS' VOLATILITY CODE
-    std::map<std::string, std::vector<double>> stocks = {
-        {"AAPL", {0.002, 0.0025, 0.003, 0.0018}},
-        {"GOOGL", {0.006, 0.0055, 0.0062, 0.006}},
-        {"MSFT", {0.005, 0.0052, 0.0048, 0.005}},
-        {"AMZN", {0.001, 0.0011, 0.0012, 0.0009}},
-        {"TSLA", {0.007, 0.0075, 0.0068, 0.0071}}
+    // std::map<std::string, std::vector<double>> stocks = {
+    //     {"AAPL", {0.002, 0.0025, 0.003, 0.0018}},
+    //     {"GOOGL", {0.006, 0.0055, 0.0062, 0.006}},
+    //     {"MSFT", {0.005, 0.0052, 0.0048, 0.005}},
+    //     {"AMZN", {0.001, 0.0011, 0.0012, 0.0009}},
+    //     {"TSLA", {0.007, 0.0075, 0.0068, 0.0071}}
+    // };
+
+     std::map<std::string, std::vector<double>> stocks = {
+        {"AAPL", {0.00411497, 0.00449777, 0.00437256, 0.00425455, 0.00418769}},
+        {"GOOGL", {0.00219567, 0.0021324, 0.00227769, 0.00223363, 0.00222109}},
+        {"MSFT", {0.00266374, 0.00273608, 0.00265705, 0.00257826, 0.00250142}},
+        {"AMZN", {0.00433298, 0.00420254, 0.00407459, 0.00399528, 0.00387365}},
+        {"TSLA", {0.00388919, 0.00386698, 0.00377571, 0.00367714, 0.0035669}}
     };
 
     //THIS WILL NEED BE EXTRACTED FROM THE CSV FILE, MAP OF TICKER TO PRICES OVER THE TIME PERIOD
@@ -231,6 +257,7 @@ int main() {
         {"TSLA", {500.0, 525.0, 520.0, 530.0, 540.0}}
     };
 
+
     //THIS IS AN EXAMPLE INITIAL PORTFOLIO ALLOCATION 
     std::map<std::string, double> my_portfolio = {
         {"AAPL", 10000},
@@ -241,7 +268,7 @@ int main() {
     };
 
     // THIS INPUT FOR THE STRATEGY WILL BE TAKEN FROM THE USER
-    std::string strategy = "optimistic";
+    std::string strategy = "neutral";  
 
     //Print the strategy we are using
     std::cout << "\nStrategy: " << strategy << "\n";
